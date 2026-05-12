@@ -1,0 +1,59 @@
+name: Deploy Smart Voice Notes
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run ML Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Smoke Test ML Imports
+        run: |
+          cd backend
+          # Mock environment variables for test
+          export SECRET_KEY=test_secret
+          export DATABASE_URL=postgresql://user:pass@localhost:5432/db
+          python -m app.ml.test_pipeline
+
+  deploy-backend:
+    name: Deploy Backend to Railway
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service backend --detach
+        working-directory: ./backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-frontend:
+    name: Notify Vercel Deployment
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Info
+        run: |
+          echo "Vercel auto-deploys on push to main."
+          echo "Check status at: https://vercel.com/dashboard"

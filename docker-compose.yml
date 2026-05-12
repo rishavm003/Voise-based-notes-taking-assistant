@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - PORT=8000
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+    restart: always
+
+# Note: This setup uses cloud-based Supabase (PostgreSQL) and Upstash (Redis) 
+# even in development, as requested in the Phase 6 guidelines.
